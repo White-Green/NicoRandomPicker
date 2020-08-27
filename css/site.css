@@ -57,13 +57,14 @@ button.accept-policy {
   position: relative;
   min-height: 100%;
 }
+*/
+body {
+  margin-bottom: 60px;
+}
 
-body {*/
-  /* Margin bottom by footer height */
-  /*margin-bottom: 60px;
-}*/
 .footer {
-  position: absolute;
+  position: fixed;
+  background-color: whitesmoke;
   bottom: 0;
   width: 100%;
   white-space: nowrap;
