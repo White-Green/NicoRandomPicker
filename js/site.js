@@ -71,7 +71,7 @@ function createURL() {
             start_time_to: document.getElementById("start_time_to_input").value
         }
     };
-    console.log(data);
+    // console.log(data);
     return location.origin + location.pathname + "?data=" + encodeURIComponent(JSON.stringify(data));
 }
 
@@ -83,6 +83,7 @@ function setResult(list) {
     });
     document.getElementById("result").innerHTML = html;
     document.getElementById("hit_count").innerText = "hit " + list.length;
+    make_tweet_button();
 }
 
 function jsonTryParse(val) {
@@ -93,24 +94,51 @@ function jsonTryParse(val) {
     }
 }
 
-document.getElementById("submit_button").addEventListener("click", button_pushed);
+function make_tweet_button() {
+    let area = document.getElementById("twitter_share_button_area");
+    area.innerHTML = "";
+    twttr.widgets.createShareButton(
+        createURL(),
+        area,
+        {
+            lang: "ja",
+            count: 'none',
+            text: '#NicoRandomPicker でランダムに動画を検索しました！',
+            hashtags: "NicoRandomPickerShare",
+        }).then(function (el) {
+            // console.log("Button created.")
+        });
+}
+
 window.addEventListener("load", () => {
-    console.log("load");
+    document.getElementById("submit_button").addEventListener("click", button_pushed);
+    document.querySelectorAll("input").forEach(e => e.addEventListener("change", make_tweet_button));
+    make_tweet_button();
+    // console.log("load");
     let params = new URLSearchParams(location.search);
     let data = jsonTryParse(params.get("data"));
-    console.log(data);
-    if (!data) { console.log("data is undefined"); return; }
+    // console.log(data);
+    if (!data) {
+        // console.log("data is undefined"); 
+        return;
+    }
     if (data.version !== undefined || data.version == 1) {
-        if (data.body === undefined) { console.log("data.body is undefined"); return; }
+        if (data.body === undefined) {
+            // console.log("data.body is undefined");
+            return;
+        }
         let body = data.body;
-        if (!Array.isArray(body)) { console.log("data.body is not Array"); return; }
+        if (!Array.isArray(body)) {
+            // console.log("data.body is not Array");
+            return;
+        }
         let correct = true;
         let regex = /\D{2}\d+/.compile();
         for (const item in body) {
             correct &= regex.test(item);
         }
         if (correct) setResult(body);
-        else console.log("body is not correct");
+        // else console.log("body is not correct");
 
         if (data.params !== undefined) {
             let params = data.params;
@@ -120,6 +148,7 @@ window.addEventListener("load", () => {
             document.getElementById("view_counter_max_input").value = params.view_counter_max;
             document.getElementById("start_time_from_input").value = params.start_time_from;
             document.getElementById("start_time_to_input").value = params.start_time_to;
+            make_tweet_button();
         }
     }
 });

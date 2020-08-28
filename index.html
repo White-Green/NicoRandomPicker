@@ -65,8 +65,16 @@
                         <input type="number" class="form-control" id="video_count_input" name="video_count"
                             placeholder="Enter tag" max="100" min="1" value="10" required>
                     </div>
-                    <button type="submit" id="submit_button" class="btn btn-primary">探す</button>
+                    <div class="row justify-content-center">
+                        <div class="col-2 offset-5">
+                            <button type="submit" id="submit_button" class="btn btn-primary">探す</button>
+                        </div>
+                        <div class="col-1 offset-4" id="twitter_share_button_area"></div>
+                    </div>
                 </form>
+                <!-- <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" id="twitter_share_button"
+                    class="twitter-share-button" data-show-count="false">Tweet</a>
+                <div id="test"></div> -->
                 <div>
                     <p id="hit_count"></p>
                     <div id="result"></div>
@@ -82,6 +90,7 @@
                 target="_blank">@White_Green2525</a>
         </div>
     </footer>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
