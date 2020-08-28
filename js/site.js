@@ -105,6 +105,7 @@ function make_tweet_button() {
                 {
                     lang: "ja",
                     count: 'none',
+                    size: "large",
                     text: '#NicoRandomPicker でランダムに動画を検索しました！',
                     hashtags: "NicoRandomPickerShare",
                 })
@@ -113,8 +114,22 @@ function make_tweet_button() {
     });
 }
 
+function copy_url() {
+    var body = document.body;
+    if (!body) return false;
+
+    var text_area = document.createElement("textarea");
+    text_area.value = createURL();
+    body.appendChild(text_area);
+    text_area.select();
+    var result = document.execCommand("copy");
+    body.removeChild(text_area);
+    return result;
+}
+
 window.addEventListener("load", () => {
     document.getElementById("submit_button").addEventListener("click", button_pushed);
+    document.getElementById("copy_url_button").addEventListener("click", copy_url);
     document.querySelectorAll("input").forEach(e => e.addEventListener("change", make_tweet_button));
     make_tweet_button();
     // console.log("load");
