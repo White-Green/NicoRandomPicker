@@ -93,21 +93,24 @@ function jsonTryParse(val) {
         return null;
     }
 }
-
+let promise = Promise.resolve(true);
 function make_tweet_button() {
-    let area = document.getElementById("twitter_share_button_area");
-    area.innerHTML = "";
-    twttr.widgets.createShareButton(
-        createURL(),
-        area,
-        {
-            lang: "ja",
-            count: 'none',
-            text: '#NicoRandomPicker でランダムに動画を検索しました！',
-            hashtags: "NicoRandomPickerShare",
-        }).then(function (el) {
-            // console.log("Button created.")
+    promise = promise.then(() => {
+        return new Promise((resolve) => {
+            let area = document.getElementById("twitter_share_button_area");
+            area.innerHTML = "";
+            twttr.widgets.createShareButton(
+                createURL(),
+                area,
+                {
+                    lang: "ja",
+                    count: 'none',
+                    text: '#NicoRandomPicker でランダムに動画を検索しました！',
+                    hashtags: "NicoRandomPickerShare",
+                })
+                .then(() => { resolve(); });
         });
+    });
 }
 
 window.addEventListener("load", () => {
