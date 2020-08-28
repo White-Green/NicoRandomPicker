@@ -28,12 +28,42 @@
                     <div class="form-group">
                         <label for="tag_name_input">タグ</label>
                         <input type="text" class="form-control" id="tag_name_input" name="tag_name"
-                            placeholder="タグを空白区切りで入力してください">
+                            placeholder="タグを空白区切りで入力してください" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="start_time_input">アップロード日時フィルタ</label>
+                        <div class="row" id="start_time_input">
+                            <div class="col form-group">
+                                <label for="start_time_from_input">ここから</label>
+                                <input type="datetime-local" class="form-control" id="start_time_from_input"
+                                    name="start_time_from">
+                            </div>
+                            <div class="col form-group">
+                                <label for="start_time_to_input">ここまで</label>
+                                <input type="datetime-local" class="form-control" id="start_time_to_input"
+                                    name="start_time_to">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="view_counter_input">再生数フィルタ</label>
+                        <div class="row" id="view_counter_input">
+                            <div class="col form-group">
+                                <label for="view_counter_min_input">これ以上</label>
+                                <input type="number" class="form-control" id="view_counter_min_input"
+                                    name="view_counter_min" min="0" max="100000000">
+                            </div>
+                            <div class="col form-group">
+                                <label for="view_counter_max_input">これ以下</label>
+                                <input type="number" class="form-control" id="view_counter_max_input"
+                                    name="view_counter_max" min="0" max="100000000">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="video_count_input">検索件数上限</label>
                         <input type="number" class="form-control" id="video_count_input" name="video_count"
-                            placeholder="Enter tag" max="100" min="1" value="10">
+                            placeholder="Enter tag" max="100" min="1" value="10" required>
                     </div>
                     <button type="submit" id="submit_button" class="btn btn-primary">探す</button>
                 </form>
