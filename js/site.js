@@ -184,13 +184,14 @@ function make_tweet_button() {
             let area = document.getElementById("twitter_share_button_area");
             area.innerHTML = "";
             twttr.widgets.createShareButton(
-                "#NicoRandomPickerShare",
+                createURL(),
                 area,
                 {
                     lang: "ja",
                     count: 'none',
                     size: "large",
-                    text: '#NicoRandomPicker でランダムに動画を検索しました！' + createURL(),
+                    text: '#NicoRandomPicker でランダムに動画を検索しました！',
+                    hashtags: "NicoRandomPickerShare"
                 })
                 .then(() => { resolve(); });
         });
