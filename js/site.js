@@ -1,5 +1,16 @@
 let videos = [];
+
 async function button_pushed() {
+    const url = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideosIdByJson";
+    await request(url);
+}
+
+async function button_pushed_snapshot() {
+    const url = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideosIdSnapshot";
+    await request(url);
+}
+
+async function request(url) {
     // console.log("pushed!");
     try {
         let b = true;
@@ -18,27 +29,6 @@ async function button_pushed() {
             start_time_from: document.getElementById("start_time_from_input").value,
             start_time_to: document.getElementById("start_time_to_input").value,
         };
-        // const toint = (s, d) => !!s && !isNaN(Number(s)) ? Number(s) : d;
-        // if (toint(parameter.view_count_min, 0) > toint(parameter.view_count_max, 100000000)) {
-        //     console.log("error");
-        //     document.getElementById("view_counter_max_input").setCustomValidity("最大値は最小値以上である必要があります");
-        //     return;
-        // } else {
-        //     console.log("no_error");
-        //     document.getElementById("view_counter_max_input").setCustomValidity("");
-        // }
-        // let from = Date.parse(parameter.start_time_from);
-        // let to = Date.parse(parameter.start_time_to)
-        // if (!isNaN(from) && !isNaN(to) && from > to) {
-        //     console.log("error");
-        //     document.getElementById("start_time_to_input").setCustomValidity("フィルタ期間の終わりは始まり以降である必要があります");
-        //     return;
-        // } else {
-        //     console.log("no_error");
-        //     document.getElementById("start_time_to_input").setCustomValidity("");
-        // }
-        const url = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideosIdByJson";
-        // const url = "http://localhost:7071/api/GetVideosIdByJson";
         // console.log(url + "?param=" + encodeURIComponent(JSON.stringify(parameter)));
         fetch(url + "?param=" + encodeURIComponent(JSON.stringify(parameter)))
             .then(resp => resp.json())
@@ -178,6 +168,7 @@ function jsonTryParse(val) {
 }
 
 let promise = Promise.resolve(true);
+
 function make_tweet_button() {
     promise = promise.then(() => {
         return new Promise((resolve) => {
@@ -193,7 +184,9 @@ function make_tweet_button() {
                     text: '#NicoRandomPicker でランダムに動画を検索しました！',
                     hashtags: "NicoRandomPickerShare"
                 })
-                .then(() => { resolve(); });
+                .then(() => {
+                    resolve();
+                });
         });
     });
 }
@@ -213,6 +206,7 @@ function copy_url() {
 
 window.addEventListener("load", () => {
     document.getElementById("submit_button").addEventListener("click", button_pushed);
+    document.getElementById("submit_button_snapshot").addEventListener("click", button_pushed_snapshot);
     document.getElementById("copy_url_button").addEventListener("click", copy_url);
     document.querySelectorAll("input").forEach(e => e.addEventListener("change", make_tweet_button));
     make_tweet_button();
@@ -225,7 +219,7 @@ window.addEventListener("load", () => {
         return;
     }
     if (data.version !== undefined) {
-        if (data.version == 1) {
+        if (data.version === 1) {
             if (data.body === undefined) {
                 // console.log("data.body is undefined");
                 return;
@@ -253,7 +247,7 @@ window.addEventListener("load", () => {
                 document.getElementById("start_time_to_input").value = params.start_time_to;
                 make_tweet_button();
             }
-        } else if (data.version == 2) {
+        } else if (data.version === 2) {
             if (data.body !== undefined) {
                 let body = data.body;
                 setResult(decompress_videos(body));

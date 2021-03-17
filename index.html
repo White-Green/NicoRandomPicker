@@ -2,107 +2,107 @@
 <html lang="ja">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>NicoRandomPicker</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/site.css" />
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/site.css"/>
 </head>
 
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NicoRandomPicker</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button> </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            <div class="text-center">
-                <form>
-                    <div class="form-group">
-                        <label for="tag_name_input">タグ</label>
-                        <input type="text" class="form-control" id="tag_name_input" name="tag_name"
-                            placeholder="タグを空白区切りで入力してください" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="start_time_input">アップロード日時フィルタ</label>
-                        <div class="row" id="start_time_input">
-                            <div class="col form-group">
-                                <label for="start_time_from_input">ここから</label>
-                                <input type="datetime-local" class="form-control" id="start_time_from_input"
-                                    name="start_time_from">
-                            </div>
-                            <div class="col form-group">
-                                <label for="start_time_to_input">ここまで</label>
-                                <input type="datetime-local" class="form-control" id="start_time_to_input"
-                                    name="start_time_to">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="view_counter_input">再生数フィルタ</label>
-                        <div class="row" id="view_counter_input">
-                            <div class="col form-group">
-                                <label for="view_counter_min_input">これ以上</label>
-                                <input type="number" class="form-control" id="view_counter_min_input"
-                                    placeholder="0以上" name="view_counter_min" min="0" max="100000000">
-                            </div>
-                            <div class="col form-group">
-                                <label for="view_counter_max_input">これ以下</label>
-                                <input type="number" class="form-control" id="view_counter_max_input"
-                                    placeholder="100,000,000以下" name="view_counter_max" min="0" max="100000000">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="video_count_input">検索件数上限</label>
-                        <input type="number" class="form-control" id="video_count_input" name="video_count"
-                            placeholder="0~100" max="100" min="1" value="10" required>
-                    </div>
-                    <div class="row justify-content-center">
-                        <div class="col-6 offset-3">
-                            <button type="submit" id="submit_button" class="btn btn-primary">探す</button>
-                        </div>
-                        <div class="col-2">
-                            <a style="padding:1px 5px;" id="copy_url_button" class="btn btn-primary"
-                                role="button">URLコピー</a>
-                            <input style="width:0;height:0;margin:0;border:none;padding:0;" type="text" class=""
-                                id="copy_url_base"></input>
-                        </div>
-                        <div class="col-1" id="twitter_share_button_area"></div>
-                    </div>
-                </form>
-                <div>
-                    <p id="hit_count"></p>
-                    <div id="result"> </div>
-                </div>
-
-            </div>
-        </main>
-    </div>
-    <footer class="border-top footer text-muted">
+<header>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container">
-            &copy; 2020 - NicoRandomPicker by <a href="https://twitter.com/White_Green2525" rel="external"
-                target="_blank">@White_Green2525</a>
+            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NicoRandomPicker</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
         </div>
-    </footer>
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    </nav>
+</header>
+<div class="container">
+    <main role="main" class="pb-3">
+        <div class="text-center">
+            <div class="form-group">
+                <label for="tag_name_input">タグ</label>
+                <input type="text" class="form-control" id="tag_name_input" name="tag_name"
+                       placeholder="タグを空白区切りで入力してください" required>
+            </div>
+            <div class="form-group">
+                <label for="start_time_input">アップロード日時フィルタ</label>
+                <div class="row" id="start_time_input">
+                    <div class="col form-group">
+                        <label for="start_time_from_input">ここから</label>
+                        <input type="datetime-local" class="form-control" id="start_time_from_input"
+                               name="start_time_from">
+                    </div>
+                    <div class="col form-group">
+                        <label for="start_time_to_input">ここまで</label>
+                        <input type="datetime-local" class="form-control" id="start_time_to_input"
+                               name="start_time_to">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="view_counter_input">再生数フィルタ</label>
+                <div class="row" id="view_counter_input">
+                    <div class="col form-group">
+                        <label for="view_counter_min_input">これ以上</label>
+                        <input type="number" class="form-control" id="view_counter_min_input"
+                               placeholder="0以上" name="view_counter_min" min="0" max="100000000">
+                    </div>
+                    <div class="col form-group">
+                        <label for="view_counter_max_input">これ以下</label>
+                        <input type="number" class="form-control" id="view_counter_max_input"
+                               placeholder="100,000,000以下" name="view_counter_max" min="0" max="100000000">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="video_count_input">検索件数上限</label>
+                <input type="number" class="form-control" id="video_count_input" name="video_count"
+                       placeholder="0~100" max="100" min="1" value="10" required>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-6 offset-3">
+                    <button id="submit_button" class="btn btn-primary">探す</button>
+                    <button id="submit_button_snapshot" class="btn btn-primary">探す(スナップショット検索API)</button>
+                </div>
+                <div class="col-2">
+                    <a style="padding:1px 5px;" id="copy_url_button" class="btn btn-primary"
+                       role="button">URLコピー</a>
+                    <input style="width:0;height:0;margin:0;border:none;padding:0;" type="text" class=""
+                           id="copy_url_base"/>
+                </div>
+                <div class="col-1" id="twitter_share_button_area"></div>
+            </div>
+            <div>
+                <p id="hit_count"></p>
+                <div id="result"></div>
+            </div>
+
+        </div>
+    </main>
+</div>
+<footer class="border-top footer text-muted">
+    <div class="container">
+        &copy; 2020-2021 - NicoRandomPicker by <a href="https://twitter.com/White_Green2525" rel="external"
+                                             target="_blank">@White_Green2525</a>
+    </div>
+</footer>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
         integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
         crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
-    <script src="js/site.js" asp-append-version="true"></script>
+<script src="js/site.js" asp-append-version="true"></script>
 </body>
 
 </html>
