@@ -1,8 +1,11 @@
-let videos = [];
-
-async function button_pushed() {
-    const url = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideosIdByJson";
-    await request(url);
+function videos() {
+    let links = document.getElementById("links");
+    const len = links.children.length;
+    let result = [];
+    for (let i = 0; i < len; i++) {
+        result.push(links.children[i].querySelector(".video_id").value);
+    }
+    return result;
 }
 
 async function button_pushed_snapshot() {
@@ -20,7 +23,7 @@ async function request(url) {
         if (!b) return;
         document.getElementById("submit_button").disabled = true;
         document.getElementById("hit_count").innerText = "検索中";
-        document.getElementById("result").innerHTML = "";
+        document.getElementById("links").innerHTML = "";
         let parameter = {
             tag_name: document.getElementById("tag_name_input").value,
             video_count: document.getElementById("video_count_input").value,
@@ -122,7 +125,9 @@ function compress_datetime(datetime) {
 }
 
 function decompress_datetime(data) {
-    let i = decimal_from_62(data).toString();
+    let decimal = decimal_from_62(data);
+    if (!decimal) return "";
+    let i = decimal.toString();
     if (i.length > 12) return "";
     while (i.length < 12) i = "0" + i;
     return i.substring(0, 4) + "-"
@@ -135,7 +140,7 @@ function decompress_datetime(data) {
 function createURL() {
     let data = {
         version: 2,
-        body: compress_videos(videos),
+        body: compress_videos(videos()),
         params:
             str_to_base64(document.getElementById("tag_name_input").value)
             + "_" + decimal_to_62(document.getElementById("video_count_input").value)
@@ -149,13 +154,27 @@ function createURL() {
 }
 
 function setResult(list) {
-    videos = list;
-    let html = "";
+    // videos = list;
+    // let html = "";
+    let links = document.getElementById("links");
+    links.innerHTML = "";
+    const template = document.getElementById("link_template");
     list.forEach(element => {
-        html += "<iframe width=\"312\" height=\"176\" src=\"https://ext.nicovideo.jp/thumb/" + element + "\" scrolling=\"no\" style=\"border:solid 1px #ccc;\" frameborder=\"0\"></iframe>";
+        let link_element = template.content.children[0].cloneNode(true);
+        link_element.querySelector("iframe").src = "https://ext.nicovideo.jp/thumb/" + element;
+        link_element.querySelector(".video_id").value = element;
+        link_element.querySelector(".delete").addEventListener("click", () => { links.removeChild(link_element); updateCount(); });
+        link_element.querySelector(".play").addEventListener("click", () => { loadPlayer(element); });
+        links.appendChild(link_element);
+        // html += "<div class=\"link_wrapper default\"><iframe class=\"\" width=\"312\" height=\"176\" src=\"https://ext.nicovideo.jp/thumb/" + element + "\" scrolling=\"no\" style=\"border:solid 1px #ccc;\" frameborder=\"0\"></iframe></div>";
     });
-    document.getElementById("result").innerHTML = html;
-    document.getElementById("hit_count").innerText = "hit " + list.length;
+    // document.getElementById("links").innerHTML = html;
+    updateCount();
+    make_tweet_button();
+}
+
+function updateCount() {
+    document.getElementById("hit_count").innerText = "hit " + document.getElementById("links").children.length;
     make_tweet_button();
 }
 
@@ -204,11 +223,67 @@ function copy_url() {
     return result;
 }
 
+let player_switch = document.getElementById("player_switch");
+let player_loaded = false;
+function loadPlayer(id) {
+    player_switch.checked = true;
+    playing_id.value = id;
+    nicovideo_player.src = "https://embed.nicovideo.jp/watch/" + id + "?jsapi=1";
+    switchPlayerMode(true);
+    player_loaded = true;
+    const len = links.children.length;
+    for (let i = 0; i < len; i++) {
+        let item = links.children[i];
+        if (item.querySelector(".video_id").value === id) {
+            item.classList.add("active");
+            item.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        } else {
+            item.classList.remove("active");
+        }
+    }
+}
+
+let view_switch = document.getElementById("view_switch");
+function switchPlayerMode(state) {
+    if (state) {
+        view_switch.classList.add("player_mode");
+    } else {
+        view_switch.classList.remove("player_mode");
+    }
+}
+
+let playing_id = document.getElementById("playing_id");
+let nicovideo_player = document.getElementById("nicovideo_player");
+let ready_to_play = false;
+window.addEventListener('message', (e) => {
+    if (e.origin === 'https://embed.nicovideo.jp') {
+        console.log(e.data.eventName, e.data.data);
+        if (e.data.eventName === "loadComplete" && ready_to_play) {
+            ready_to_play = false;
+            nicovideo_player.contentWindow.postMessage({ sourceConnectorType: 1, eventName: "play" }, "https://embed.nicovideo.jp");
+        }
+        if (e.data.eventName === "playerStatusChange" && e.data.data.playerStatus === 4) {
+            let links = document.getElementById("links");
+            const len = links.children.length;
+            ready_to_play = true;
+            for (let i = 0; i < len; i++) {
+                if (links.children[i].querySelector(".video_id").value === playing_id.value) {
+                    loadPlayer(links.children[(i + 1) % len].querySelector(".video_id").value);
+                    return;
+                }
+            }
+            loadPlayer(links.children[0].querySelector(".video_id").value);
+        }
+    }
+});
+
 window.addEventListener("load", () => {
-    document.getElementById("submit_button").addEventListener("click", button_pushed);
-    document.getElementById("submit_button_snapshot").addEventListener("click", button_pushed_snapshot);
+    player_switch.addEventListener("change", (e) => switchPlayerMode(e.target.checked && player_loaded));
+    document.getElementById("submit_button").addEventListener("click", button_pushed_snapshot);
     document.getElementById("copy_url_button").addEventListener("click", copy_url);
     document.querySelectorAll("input").forEach(e => e.addEventListener("change", make_tweet_button));
+    $('[data-toggle="tooltip"]').tooltip()
+
     make_tweet_button();
     // console.log("load");
     let params = new URLSearchParams(location.search);
