@@ -257,7 +257,7 @@ let nicovideo_player = document.getElementById("nicovideo_player");
 let ready_to_play = false;
 window.addEventListener('message', (e) => {
     if (e.origin === 'https://embed.nicovideo.jp') {
-        console.log(e.data.eventName, e.data.data);
+        // console.log(e.data.eventName, e.data.data);
         if (e.data.eventName === "loadComplete" && ready_to_play) {
             ready_to_play = false;
             nicovideo_player.contentWindow.postMessage({ sourceConnectorType: 1, eventName: "play" }, "https://embed.nicovideo.jp");
