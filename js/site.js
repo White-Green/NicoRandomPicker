@@ -163,6 +163,7 @@ function setResult(list) {
         let link_element = template.content.children[0].cloneNode(true);
         link_element.querySelector("iframe").src = "https://ext.nicovideo.jp/thumb/" + element;
         link_element.querySelector(".video_id").value = element;
+        link_element.querySelector(".video_id_bar").innerText = element;
         link_element.querySelector(".delete").addEventListener("click", () => { links.removeChild(link_element); updateCount(); });
         link_element.querySelector(".play").addEventListener("click", () => { loadPlayer(element); });
         links.appendChild(link_element);

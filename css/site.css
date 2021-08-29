@@ -137,6 +137,14 @@ body {
   font-size: 0.2em;
 }
 
+.link_wrapper > .buttons > .video_id_bar {
+  flex-grow: 1;
+  text-align: start;
+  margin-left: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
 .link_wrapper .link {
   margin: 2px;
 }
