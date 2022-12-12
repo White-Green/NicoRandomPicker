@@ -28,6 +28,7 @@
       "react-app/jest"
     ]
   },
+  "homepage": "/NicoRandomPicker",
   "browserslist": {
     "production": [
       ">0.2%",

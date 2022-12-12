@@ -322,6 +322,7 @@ const Player: React.FC<{ video_playing: VideoPlayingData | null, next: () => voi
                         case "None":
                             break;
                         default:
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             const _: never = loop_type;
                     }
                 }
@@ -361,6 +362,7 @@ const Player: React.FC<{ video_playing: VideoPlayingData | null, next: () => voi
                                     set_loop_type("Loop");
                                     break;
                                 default:
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                     const _: never = loop_type;
                             }
                         }}>
