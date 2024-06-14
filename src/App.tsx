@@ -580,7 +580,7 @@ const VideoLink = React.forwardRef<HTMLDivElement, { content: VideoContent, is_s
                             <img alt={`delete ${contentId} from search result`} src={delete_button} width={30}
                                  height={30}/>
                         </button>
-                        <a href={`https://nico.ms/${contentId}`}
+                        <a href={`https://www.nicovideo.jp/watch_tmp/${contentId}`}
                            target="_blank"
                            rel="noreferrer noopener">
                             {unescapeHTML(title)}
