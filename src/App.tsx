@@ -9,6 +9,7 @@ import loop_none_button from "./loop_none_button.svg";
 import triangle_right from "./triangle_right.svg";
 import triangle_left from "./triangle_left.svg";
 import search_button from "./search_button.svg";
+import {create_v2_migration_url, MigrationState} from "./migration";
 
 const get_video_details_endpoint = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideoDetails";
 
@@ -75,6 +76,16 @@ function App() {
     const [video_playing, set_video_playing] = React.useState<VideoPlayingData | null>(and_then(sessionStorage.getItem(video_playing_storage_key), parse_video_playing_data));
     const [share_expand, set_share_expand] = React.useState<boolean>(false);
     const [share_only_search, set_share_only_search] = React.useState<boolean>(false);
+    const migration_url_requested = React.useRef(false);
+
+    React.useEffect(() => {
+        if (migration_url_requested.current) return;
+        migration_url_requested.current = true;
+
+        create_v2_migration_url(get_current_migration_state())
+            .then(url => console.log("NicoRandomPicker v2 migration URL:", url))
+            .catch(error => console.error("Failed to create NicoRandomPicker v2 migration URL:", error));
+    }, []);
 
     React.useLayoutEffect(() => {
         if (video_playing !== null && videos !== null) {
@@ -88,21 +99,7 @@ function App() {
     React.useEffect(() => {
         const videos_data = sessionStorage.getItem(videos_storage_key);
         if (videos_data === null) return;
-        const to_string_list: ((s: string) => string[] | null) = (s) => {
-            let obj;
-            try {
-                obj = JSON.parse(s);
-            } catch {
-                return null;
-            }
-            if (!Array.isArray(obj)) return null;
-            for (const contentId of obj) {
-                if (typeof contentId !== "string") return null;
-            }
-            return obj as string[];
-        };
-
-        const videos_list = to_string_list(videos_data);
+        const videos_list = parse_content_ids(videos_data);
         if (videos_list === null) return;
 
         fetch(get_video_details_endpoint, {
@@ -388,6 +385,44 @@ const uploaded_until_storage_key = "SearchForm:uploaded_until";
 const view_min_storage_key = "SearchForm:view_min";
 const view_max_storage_key = "SearchForm:view_max";
 const result_count_storage_key = "SearchForm:result_count";
+
+function parse_content_ids(data: string): string[] | null {
+    let value: unknown;
+    try {
+        value = JSON.parse(data);
+    } catch {
+        return null;
+    }
+    if (!Array.isArray(value) || value.some(contentId => typeof contentId !== "string")) return null;
+    return value as string[];
+}
+
+function optional_number_from_storage(key: string): number | null {
+    const value = sessionStorage.getItem(key);
+    if (value === null || value === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function result_count_from_storage(): number {
+    const value = optional_number_from_storage(result_count_storage_key);
+    return value !== null ? value : 10;
+}
+
+function get_current_migration_state(): MigrationState {
+    const stored_content_ids = sessionStorage.getItem(videos_storage_key);
+    return {
+        search: {
+            tag: sessionStorage.getItem(tag_storage_key) || "",
+            uploadedSince: sessionStorage.getItem(uploaded_since_storage_key) || null,
+            uploadedUntil: sessionStorage.getItem(uploaded_until_storage_key) || null,
+            viewMin: optional_number_from_storage(view_min_storage_key),
+            viewMax: optional_number_from_storage(view_max_storage_key),
+            resultCount: result_count_from_storage(),
+        },
+        contentIds: stored_content_ids !== null ? parse_content_ids(stored_content_ids) || [] : [],
+    };
+}
 
 const SearchForm: React.FC<{ expand: boolean, set_videos: (videos: Omit<VideoContent, "div_ref">[]) => void }> =
     ({
