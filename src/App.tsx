@@ -9,9 +9,10 @@ import loop_none_button from "./loop_none_button.svg";
 import triangle_right from "./triangle_right.svg";
 import triangle_left from "./triangle_left.svg";
 import search_button from "./search_button.svg";
-import {create_v2_migration_url, MigrationState} from "./migration";
 
 const get_video_details_endpoint = "https://nicorandompickerfunction.azurewebsites.net/api/GetVideoDetails";
+const v2_app_url = "https://nicorandompicker.white-green.net/";
+const v2_encode_share_state_endpoint = v2_app_url + "api/encode_share_state";
 
 const form_expand_storage_key = "form_expand";
 const player_enabled_storage_key = "player_enabled";
@@ -78,15 +79,6 @@ function App() {
     const [share_only_search, set_share_only_search] = React.useState<boolean>(false);
     const migration_url_requested = React.useRef(false);
 
-    React.useEffect(() => {
-        if (migration_url_requested.current) return;
-        migration_url_requested.current = true;
-
-        create_v2_migration_url(get_current_migration_state())
-            .then(url => console.log("NicoRandomPicker v2 migration URL:", url))
-            .catch(error => console.error("Failed to create NicoRandomPicker v2 migration URL:", error));
-    }, []);
-
     React.useLayoutEffect(() => {
         if (video_playing !== null && videos !== null) {
             const playing = videos.find(({contentId}) => contentId === video_playing.contentId);
@@ -97,9 +89,34 @@ function App() {
     }, [video_playing, videos]);
 
     React.useEffect(() => {
+        const log_v2_migration_url = (videos: string[]) => {
+            if (migration_url_requested.current) return;
+            migration_url_requested.current = true;
+            create_v2_migration_url(get_current_share_data(videos))
+                .then(url => console.log("NicoRandomPicker v2 migration URL:", url))
+                .catch(error => console.error("Failed to create NicoRandomPicker v2 migration URL:", error));
+        };
+
         const videos_data = sessionStorage.getItem(videos_storage_key);
-        if (videos_data === null) return;
-        const videos_list = parse_content_ids(videos_data);
+        if (videos_data === null) {
+            log_v2_migration_url([]);
+            return;
+        }
+        const to_string_list: ((s: string) => string[] | null) = (s) => {
+            let obj;
+            try {
+                obj = JSON.parse(s);
+            } catch {
+                return null;
+            }
+            if (!Array.isArray(obj)) return null;
+            for (const contentId of obj) {
+                if (typeof contentId !== "string") return null;
+            }
+            return obj as string[];
+        };
+
+        const videos_list = to_string_list(videos_data);
         if (videos_list === null) return;
 
         fetch(get_video_details_endpoint, {
@@ -110,7 +127,8 @@ function App() {
             .then(detail_map => set_videos(videos_list.map(contentId => {
                 return {div_ref: React.createRef(), ...detail_map[contentId]};
             })))
-            .catch(console.error);
+            .catch(console.error)
+            .finally(() => log_v2_migration_url(videos_list));
     }, []);
     React.useEffect(() => {
         if (videos !== null) {
@@ -237,8 +255,12 @@ function App() {
 }
 
 function create_url_by_current_state(videos: VideoContent[] | null) {
-    const data = {
-        videos: videos !== null ? videos.map(({contentId}) => contentId) : [],
+    return createURL(get_current_share_data(videos !== null ? videos.map(({contentId}) => contentId) : []));
+}
+
+function get_current_share_data(videos: string[]): ShareData {
+    return {
+        videos,
         tag: sessionStorage.getItem(tag_storage_key) || "",
         view_min: filter(map(sessionStorage.getItem(view_min_storage_key), s => Number(s)), (v) => !isNaN(v)) || undefined,
         view_max: filter(map(sessionStorage.getItem(view_max_storage_key), s => Number(s)), (v) => !isNaN(v)) || undefined,
@@ -246,7 +268,6 @@ function create_url_by_current_state(videos: VideoContent[] | null) {
         uploaded_until: sessionStorage.getItem(uploaded_until_storage_key) || "",
         result_count: filter(map(sessionStorage.getItem(result_count_storage_key), Number), (v) => !isNaN(v)) || 10,
     };
-    return createURL(data);
 }
 
 function and_then<T, U>(input: T | null, map: (v: T) => (U | null)): U | null {
@@ -385,44 +406,6 @@ const uploaded_until_storage_key = "SearchForm:uploaded_until";
 const view_min_storage_key = "SearchForm:view_min";
 const view_max_storage_key = "SearchForm:view_max";
 const result_count_storage_key = "SearchForm:result_count";
-
-function parse_content_ids(data: string): string[] | null {
-    let value: unknown;
-    try {
-        value = JSON.parse(data);
-    } catch {
-        return null;
-    }
-    if (!Array.isArray(value) || value.some(contentId => typeof contentId !== "string")) return null;
-    return value as string[];
-}
-
-function optional_number_from_storage(key: string): number | null {
-    const value = sessionStorage.getItem(key);
-    if (value === null || value === "") return null;
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-}
-
-function result_count_from_storage(): number {
-    const value = optional_number_from_storage(result_count_storage_key);
-    return value !== null ? value : 10;
-}
-
-function get_current_migration_state(): MigrationState {
-    const stored_content_ids = sessionStorage.getItem(videos_storage_key);
-    return {
-        search: {
-            tag: sessionStorage.getItem(tag_storage_key) || "",
-            uploadedSince: sessionStorage.getItem(uploaded_since_storage_key) || null,
-            uploadedUntil: sessionStorage.getItem(uploaded_until_storage_key) || null,
-            viewMin: optional_number_from_storage(view_min_storage_key),
-            viewMax: optional_number_from_storage(view_max_storage_key),
-            resultCount: result_count_from_storage(),
-        },
-        contentIds: stored_content_ids !== null ? parse_content_ids(stored_content_ids) || [] : [],
-    };
-}
 
 const SearchForm: React.FC<{ expand: boolean, set_videos: (videos: Omit<VideoContent, "div_ref">[]) => void }> =
     ({
@@ -749,6 +732,33 @@ interface ShareData {
     uploaded_since: string,
     uploaded_until: string,
     result_count: number,
+}
+
+function local_datetime_to_rfc3339(value: string): string | null {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+async function create_v2_migration_url(data: ShareData): Promise<string> {
+    const response = await fetch(v2_encode_share_state_endpoint, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            search: {
+                tag: data.tag,
+                uploadedSince: local_datetime_to_rfc3339(data.uploaded_since),
+                uploadedUntil: local_datetime_to_rfc3339(data.uploaded_until),
+                viewMin: data.view_min ?? null,
+                viewMax: data.view_max ?? null,
+                resultCount: data.result_count,
+            },
+            contentIds: data.videos,
+        }),
+    });
+    if (!response.ok) throw new Error(await response.text() || `Failed to encode state for v2: ${response.status}`);
+
+    return `${v2_app_url}?data=${encodeURIComponent(await response.text())}&redirect`;
 }
 
 function createURL(data: ShareData) {

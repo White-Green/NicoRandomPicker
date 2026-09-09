@@ -1,7 +1,8 @@
 import React from 'react';
 import {render, waitFor} from '@testing-library/react';
 import App from './App';
-import {v2_encode_share_state_endpoint} from './migration';
+
+const v2_encode_share_state_endpoint = 'https://nicorandompicker.white-green.net/api/encode_share_state';
 
 afterEach(() => {
     jest.restoreAllMocks();
