@@ -3,13 +3,22 @@ import {render, waitFor} from '@testing-library/react';
 import App from './App';
 
 const v2_encode_share_state_endpoint = 'https://nicorandompicker.white-green.net/api/encode_share_state';
+const location_replace = jest.fn();
+
+beforeEach(() => {
+    jest.spyOn(window, 'location', 'get').mockReturnValue({
+        ...window.location,
+        replace: location_replace,
+    });
+});
 
 afterEach(() => {
     jest.restoreAllMocks();
+    location_replace.mockReset();
     sessionStorage.clear();
 });
 
-test('logs a v2 migration URL with the persisted legacy state after mounting', async () => {
+test('redirects to v2 with the persisted legacy state after mounting', async () => {
     sessionStorage.setItem('SearchForm:tag', '初音ミク VOCALOID');
     sessionStorage.setItem('SearchForm:uploaded_since', '2024-01-02T03:04');
     sessionStorage.setItem('SearchForm:uploaded_until', '2025-06-07T08:09');
@@ -33,14 +42,12 @@ test('logs a v2 migration URL with the persisted legacy state after mounting', a
             }),
         } as Response);
     });
-    const console_log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
-
     render(<App/>);
 
-    await waitFor(() => expect(console_log).toHaveBeenCalledWith(
-        'NicoRandomPicker v2 migration URL:',
+    await waitFor(() => expect(location_replace).toHaveBeenCalledWith(
         'https://nicorandompicker.white-green.net/?data=encoded%2Fshare%2Bstate&redirect',
     ));
+    expect(location_replace).toHaveBeenCalledTimes(1);
 
     const encode_call = fetch_mock.mock.calls.find(([input]) => input === v2_encode_share_state_endpoint);
     expect(encode_call).toBeDefined();
@@ -55,4 +62,36 @@ test('logs a v2 migration URL with the persisted legacy state after mounting', a
         },
         contentIds: ['sm9', 'so12345678'],
     });
+});
+
+test('redirects only once without saved videos in StrictMode', async () => {
+    const fetch_mock = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('empty-state'),
+    } as Response);
+
+    render(<React.StrictMode><App/></React.StrictMode>);
+
+    await waitFor(() => expect(location_replace).toHaveBeenCalledWith(
+        'https://nicorandompicker.white-green.net/?data=empty-state&redirect',
+    ));
+    expect(location_replace).toHaveBeenCalledTimes(1);
+    expect(fetch_mock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse((fetch_mock.mock.calls[0][1] as RequestInit).body as string).contentIds).toEqual([]);
+});
+
+test('stays on the legacy page when the v2 encoder fails', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve('Encoding failed'),
+    } as Response);
+    const console_error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    render(<App/>);
+
+    await waitFor(() => expect(console_error).toHaveBeenCalledWith(
+        'Failed to create NicoRandomPicker v2 migration URL:',
+        new Error('Encoding failed'),
+    ));
+    expect(location_replace).not.toHaveBeenCalled();
 });
