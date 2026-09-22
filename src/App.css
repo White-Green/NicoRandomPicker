@@ -182,6 +182,32 @@
     grid-column: 1 / 2;
 }
 
+.share_area {
+    position: fixed;
+    background: white;
+    top: 57px;
+    right: 10px;
+    border: solid 2px #202020;
+    border-top: none;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    transition-duration: .5s;
+}
+
+.share_area_collapse {
+    top: -2em;
+    transition-duration: .5s;
+}
+
+.share_checkbox_area {
+    margin-left: 0.5em;
+    margin-top: 0.5em;
+}
+
+.share_button_area {
+    display: inline-block;
+}
+
 .player_area {
     grid-column: 1 / 2;
     margin-top: 77px;
@@ -380,6 +406,20 @@
 
     .tags {
         overflow-y: scroll;
+    }
+
+    .share_area {
+        top: 117px;
+        width: 100vw;
+        width: 100dvw;
+        border: none;
+        border-bottom: solid 2px #202020;
+        border-radius: 0;
+        right: 0;
+    }
+
+    .share_area_collapse {
+        top: -2em;
     }
 
     .form_main {

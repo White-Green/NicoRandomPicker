@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import play_button from "./play_button.svg";
 import delete_button from "./delete_button.svg";
+import share_button from "./share_button.svg";
 import loop_button from "./loop_button.svg";
 import loop_once_button from "./loop_once_button.svg";
 import loop_none_button from "./loop_none_button.svg";
@@ -74,6 +75,8 @@ function App() {
     const [player_enabled, set_player_enabled] = React.useState<boolean>(sessionStorage.getItem(player_enabled_storage_key) !== null);
     const [videos, set_videos] = React.useState<VideoContent[] | null>(null);
     const [video_playing, set_video_playing] = React.useState<VideoPlayingData | null>(and_then(sessionStorage.getItem(video_playing_storage_key), parse_video_playing_data));
+    const [share_expand, set_share_expand] = React.useState<boolean>(false);
+    const [share_only_search, set_share_only_search] = React.useState<boolean>(false);
     const migration_url_requested = React.useRef(false);
 
     React.useLayoutEffect(() => {
@@ -171,12 +174,6 @@ function App() {
                         set_video_playing({contentId: prev_video.contentId, tags: prev_video.tags});
                     }}/>
                 <div className="video_link_area">
-                    <aside className="alert alert-warning m-3" aria-label="旧版の運用終了予定のお知らせ">
-                        <strong>この旧版は運用終了予定です。</strong>
-                        <p className="mb-1">新規の利用・共有はNicoRandomPicker v2をご利用ください。旧版の共有リンクの発行は終了しました。</p>
-                        <a href={v2_app_url} target="_blank" rel="noopener noreferrer">v2を新しいタブで開く</a>
-                        <p className="mb-0 mt-1">このリンクでは検索設定・結果は引き継がれません。旧版の状態はこのタブに残ります。</p>
-                    </aside>
                     <div>
                         {videos && videos.map((video, i) =>
                             <VideoLink
@@ -200,12 +197,44 @@ function App() {
                         }));
                         set_form_expand(false);
                     }}/>
+                <div className={"share_area " + (share_expand ? "" : "share_area_collapse")}>
+                    <label className="share_checkbox_area">
+                        検索設定のみ共有
+                        <input type="checkbox" value={share_only_search ? "true" : "false"}
+                               onChange={(e) => set_share_only_search(e.target.checked)}/>
+                    </label>
+                    <span className="share_button_area">
+                        <button className="btn btn-primary mx-4 my-3" onClick={() => {
+                            const url = create_url_by_current_state(share_only_search ? [] : videos);
+                            navigator.clipboard.writeText(url)
+                                .then(() => set_share_expand(false));
+                        }}>リンクURLをコピー
+                        </button>
+                        <button className="btn btn-primary me-4 my-3" onClick={() => {
+                            const url = create_url_by_current_state(share_only_search ? [] : videos);
+                            const params = new URLSearchParams({
+                                text: `#NicoRandomPicker でランダムに動画を検索しま${share_only_search ? "しょう" : "した"}！`,
+                                hashtags: "NicoRandomPickerShare",
+                                url,
+                            }).toString();
+                            window.open("https://twitter.com/intent/tweet?" + params, undefined, "popup,width=500,height=500");
+                            set_share_expand(false);
+                        }}>リンクをTweet
+                        </button>
+                    </span>
+                </div>
                 <header className="header_area">
                     <nav
                         className="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-0">
                         <div className="container">
                             <a className="navbar-brand header_link_area" href="?">NicoRandomPicker</a>
                             <div className="d-flex header_buttons_area">
+                                <button className="btn btn-success mx-1" type="button"
+                                        title={`検索結果の共有メニューを${share_expand ? "閉じる" : "開く"}`}
+                                        onClick={() => set_share_expand(!share_expand)}>
+                                    <img alt="share" src={share_button} height={"auto"} width={"auto"}
+                                         style={{height: "1rem"}}/>
+                                </button>
                                 <button className="btn btn-success mx-1" type="button"
                                         title={`埋め込みプレーヤーを${player_enabled ? "閉じる" : "開く"}`}
                                         onClick={() => set_player_enabled(!player_enabled)}>
@@ -223,6 +252,10 @@ function App() {
             </div>
         </div>
     );
+}
+
+function create_url_by_current_state(videos: VideoContent[] | null) {
+    return createURL(get_current_share_data(videos !== null ? videos.map(({contentId}) => contentId) : []));
 }
 
 function get_current_share_data(videos: string[]): ShareData {
@@ -597,6 +630,19 @@ const VideoLink = React.forwardRef<HTMLDivElement, { content: VideoContent, is_s
             </div>);
     });
 
+function decimal_to_62(value: number) {
+    if (value === 0) return "0";
+    let result = "";
+    while (value > 0) {
+        let digit = value % 62;
+        value = parseInt(String(value / 62));
+        if (0 <= digit && digit <= 9) result = String.fromCharCode("0".charCodeAt(0) + digit) + result;
+        if (10 <= digit && digit <= 35) result = String.fromCharCode("a".charCodeAt(0) + digit - 10) + result;
+        if (36 <= digit && digit <= 61) result = String.fromCharCode("A".charCodeAt(0) + digit - 36) + result;
+    }
+    return result;
+}
+
 function decimal_from_62(value: string) {
     if (value === "") return null;
     let result = 0;
@@ -610,6 +656,12 @@ function decimal_from_62(value: string) {
     return result;
 }
 
+function str_to_base64(str: string) {
+    // @ts-ignore Uint8Array is like number[]
+    let utf8str = String.fromCharCode(...new TextEncoder().encode(str));
+    return window.btoa(utf8str);
+}
+
 function str_from_base64(data: string) {
     try {
         const decoded_utf8str = window.atob(data);
@@ -619,6 +671,16 @@ function str_from_base64(data: string) {
     } catch {
         return null
     }
+}
+
+function compress_videos(videos: string[]) {
+    let result = [];
+    for (const video of videos) {
+        let len = 0;
+        while (video.charCodeAt(len) < "0".charCodeAt(0) || "9".charCodeAt(0) < video.charCodeAt(len)) len++;
+        result.push(video.substring(0, len) + (len === 2 ? "" : "_") + decimal_to_62(Number(video.substring(len))));
+    }
+    return result.join("-");
 }
 
 function decompress_videos(str: string) {
@@ -635,6 +697,18 @@ function decompress_videos(str: string) {
         }
     }
     return result;
+}
+
+function compress_datetime(datetime: string) {
+    const regex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+    if (!regex.test(datetime)) return "";
+    let i = datetime.substring(0, 4)
+        + datetime.substring(5, 7)
+        + datetime.substring(8, 10)
+        + datetime.substring(11, 13)
+        + datetime.substring(14);
+    if (isNaN(Number(i))) return "";
+    return decimal_to_62(Number(i));
 }
 
 function decompress_datetime(data: string) {
@@ -685,6 +759,21 @@ async function create_v2_migration_url(data: ShareData): Promise<string> {
     if (!response.ok) throw new Error(await response.text() || `Failed to encode state for v2: ${response.status}`);
 
     return `${v2_app_url}?data=${encodeURIComponent(await response.text())}&redirect`;
+}
+
+function createURL(data: ShareData) {
+    let d = {
+        version: 2,
+        body: compress_videos(data.videos),
+        params:
+            str_to_base64(data.tag)
+            + "_" + decimal_to_62(data.result_count)
+            + "_" + (data.view_min !== undefined ? decimal_to_62(data.view_min) : "")
+            + "_" + (data.view_max !== undefined ? decimal_to_62(data.view_max) : "")
+            + "_" + compress_datetime(data.uploaded_since)
+            + "_" + compress_datetime(data.uploaded_until)
+    };
+    return window.location.origin + window.location.pathname + "?data=" + encodeURIComponent(JSON.stringify(d));
 }
 
 function parseData(data: string): ShareData | null {
