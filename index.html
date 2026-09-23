@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, follow">
+  <title>NicoRandomPicker は新版へ移動しました</title>
+  <style>
+    body { font-family: system-ui, sans-serif; color: #24292f; background: #f6f8fa; margin: 0; }
+    main { max-width: 36rem; margin: 12vh auto; padding: 2rem; background: white; border-radius: 0.75rem; }
+    h1 { font-size: 1.5rem; }
+    a { color: #0969da; }
+    #status { line-height: 1.7; }
+    @media (max-width: 40rem) { main { margin: 2rem 1rem; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>NicoRandomPicker は新版へ移動しました</h1>
+    <p id="status" role="status">新版へ自動的に移動しています…</p>
+    <p>自動的に移動しない場合は、<a id="destination" href="https://nicorandompicker.white-green.net/">こちらをクリックして新版を開いてください</a>。</p>
+    <p>手動で開く場合、検索条件や動画リストが引き継がれないことがあります。</p>
+    <noscript><p>自動で移動するには JavaScript を有効にしてください。無効のまま利用する場合は、上のリンクから新版を開いてください。</p></noscript>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+
+      const appUrl = 'https://nicorandompicker.white-green.net/';
+      const status = document.getElementById('status');
+      const destination = document.getElementById('destination');
+
+      function fromBase62(value) {
+        if (!value) return null;
+        let result = 0;
+        for (const c of value) {
+          result *= 62;
+          if (c >= '0' && c <= '9') result += c.charCodeAt(0) - 48;
+          if (c >= 'a' && c <= 'z') result += c.charCodeAt(0) - 97 + 10;
+          if (c >= 'A' && c <= 'Z') result += c.charCodeAt(0) - 65 + 36;
+        }
+        return result;
+      }
+
+      function decodeVideos(value) {
+        return value.split('-').filter(Boolean).map(video => {
+          if (video.includes('_')) {
+            const parts = video.split('_');
+            return parts[0] + fromBase62(parts[1]);
+          }
+          return video.slice(0, 2) + fromBase62(video.slice(2));
+        });
+      }
+
+      function decodeDatetime(value) {
+        const decimal = fromBase62(value);
+        if (!decimal) return '';
+        const digits = String(decimal).padStart(12, '0');
+        if (digits.length > 12) return '';
+        return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}T${digits.slice(8, 10)}:${digits.slice(10)}`;
+      }
+
+      function decodeTag(value) {
+        try {
+          const bytes = Uint8Array.from(atob(value), c => c.charCodeAt(0));
+          return new TextDecoder().decode(bytes);
+        } catch {
+          return '';
+        }
+      }
+
+      function emptyState() {
+        return { videos: [], tag: '', viewMin: null, viewMax: null,
+          uploadedSince: '', uploadedUntil: '', resultCount: 10 };
+      }
+
+      function parseShareData(value) {
+        let data;
+        try { data = JSON.parse(value); } catch { return null; }
+        if (!data || typeof data !== 'object') return null;
+        const state = emptyState();
+        if (data.version === 1) {
+          if (Array.isArray(data.body)) {
+            state.videos = data.body.filter(id => /\D{2}\d+/.test(String(id))).slice(0, 100);
+          }
+          const params = data.params || {};
+          if (params.tag_name !== undefined) state.tag = params.tag_name;
+          if (params.video_count !== undefined && !isNaN(Number(params.video_count))) state.resultCount = Number(params.video_count);
+          if (params.view_counter_min !== undefined && !isNaN(Number(params.view_counter_min))) state.viewMin = Number(params.view_counter_min);
+          if (params.view_counter_max !== undefined && !isNaN(Number(params.view_counter_max))) state.viewMax = Number(params.view_counter_max);
+          if (params.start_time_from !== undefined) state.uploadedSince = params.start_time_from;
+          if (params.start_time_to !== undefined) state.uploadedUntil = params.start_time_to;
+          return state;
+        }
+        if (data.version === 2) {
+          if (typeof data.body === 'string') state.videos = decodeVideos(data.body);
+          if (typeof data.params === 'string') {
+            const params = data.params.split('_');
+            state.tag = decodeTag(params[0]);
+            if (params.length > 1) state.resultCount = fromBase62(params[1]) || 10;
+            if (params.length > 2) state.viewMin = fromBase62(params[2]) || null;
+            if (params.length > 3) state.viewMax = fromBase62(params[3]) || null;
+            if (params.length > 4) state.uploadedSince = decodeDatetime(params[4]);
+            if (params.length > 5) state.uploadedUntil = decodeDatetime(params[5]);
+          }
+          return state;
+        }
+        return null;
+      }
+
+      function savedState() {
+        const state = emptyState();
+        try {
+          const videos = JSON.parse(sessionStorage.getItem('videos') || '[]');
+          state.videos = Array.isArray(videos) && videos.every(id => typeof id === 'string') ? videos : [];
+        } catch { /* Invalid saved videos should not prevent migration. */ }
+        try {
+          const read = key => sessionStorage.getItem(`SearchForm:${key}`) || '';
+          const number = key => {
+            const value = Number(read(key));
+            return !isNaN(value) ? value : null;
+          };
+          state.tag = read('tag');
+          state.viewMin = number('view_min') || null;
+          state.viewMax = number('view_max') || null;
+          state.uploadedSince = read('uploaded_since');
+          state.uploadedUntil = read('uploaded_until');
+          state.resultCount = number('result_count') || 10;
+        } catch { /* Session storage may be unavailable. */ }
+        return state;
+      }
+
+      function toRfc3339(value) {
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.toISOString();
+      }
+
+      async function migrate() {
+        const params = new URLSearchParams(location.search);
+        const shared = params.get('data');
+        const state = shared === null ? savedState() : parseShareData(shared);
+        if (state === null) {
+          status.textContent = '旧形式の共有 URL を読み取れませんでした。新版を開いてください。';
+          return;
+        }
+        try {
+          const response = await fetch(`${appUrl}api/encode_share_state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              search: {
+                tag: state.tag,
+                uploadedSince: toRfc3339(state.uploadedSince),
+                uploadedUntil: toRfc3339(state.uploadedUntil),
+                viewMin: state.viewMin,
+                viewMax: state.viewMax,
+                resultCount: state.resultCount
+              },
+              contentIds: state.videos
+            })
+          });
+          if (!response.ok) throw new Error(`Encoder returned ${response.status}`);
+          const encoded = await response.text();
+          if (!encoded) throw new Error('Encoder returned an empty response');
+          const url = `${appUrl}?data=${encodeURIComponent(encoded)}&redirect`;
+          destination.href = url;
+          location.replace(url);
+        } catch (error) {
+          console.error('Failed to migrate NicoRandomPicker state:', error);
+          status.textContent = '検索条件を引き継げませんでした。時間をおいて再読み込みするか、新版を開いてください。';
+        }
+      }
+
+      migrate();
+    })();
+  </script>
+</body>
+</html>
