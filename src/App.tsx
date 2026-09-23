@@ -89,17 +89,17 @@ function App() {
     }, [video_playing, videos]);
 
     React.useEffect(() => {
-        const log_v2_migration_url = (videos: string[]) => {
+        const redirect_to_v2 = (videos: string[]) => {
             if (migration_url_requested.current) return;
             migration_url_requested.current = true;
             create_v2_migration_url(get_current_share_data(videos))
-                .then(url => console.log("NicoRandomPicker v2 migration URL:", url))
+                .then(url => window.location.replace(url))
                 .catch(error => console.error("Failed to create NicoRandomPicker v2 migration URL:", error));
         };
 
         const videos_data = sessionStorage.getItem(videos_storage_key);
         if (videos_data === null) {
-            log_v2_migration_url([]);
+            redirect_to_v2([]);
             return;
         }
         const to_string_list: ((s: string) => string[] | null) = (s) => {
@@ -128,7 +128,7 @@ function App() {
                 return {div_ref: React.createRef(), ...detail_map[contentId]};
             })))
             .catch(console.error)
-            .finally(() => log_v2_migration_url(videos_list));
+            .finally(() => redirect_to_v2(videos_list));
     }, []);
     React.useEffect(() => {
         if (videos !== null) {
